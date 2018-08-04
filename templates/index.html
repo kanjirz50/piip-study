@@ -18,24 +18,43 @@
         <span>現在の正答率{{ record.correct_ratio }}%</span>
         <span v-if="record.correct_ratio > 70">【合格ライン】</span>
         <span v-else>【不合格ライン】</span>
+        <ul class="right">
+            <li><a href="#"><i class="material-icons">help</i></a></li>
+      </ul>
     </div>
     </nav>
     {% endraw %}
     <div class="row">
         <!-- Page Content goes here -->
         {% raw %}
-        <h6>{{ question }}</h6>
-        <ol style="list-style-type: katakana">
-            <li v-for="(candidate, index) in candidates" v-on:click="checkAnswer(index);">
-                <template v-if="show_answer">
-                    <i v-if="selected_answer_index == index" class="material-icons">check</i>
-                    <span v-if="candidate.correct">正しい：</span>
-                    <span v-else>誤り：</span>
-                </template>
-                {{ candidate.text }}
-                <p v-if="show_answer">{{ candidate.description }}</p>
-            </li>
-        </ol>
+        <template v-if="is_fetching">
+            <div class="preloader-wrapper big active">
+                <div class="spinner-layer spinner-blue-only">
+                    <div class="circle-clipper left">
+                        <div class="circle"></div>
+                    </div><div class="gap-patch">
+                    <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+                </div>
+            </div>
+        </template>
+
+        <template v-else>
+            <h6>{{ question }}</h6>
+            <ol style="list-style-type: katakana">
+                <li v-for="(candidate, index) in candidates" v-on:click="checkAnswer(index);">
+                    <template v-if="show_answer">
+                        <i v-if="selected_answer_index == index" class="material-icons">check</i>
+                        <span v-if="candidate.correct">正しい：</span>
+                        <span v-else>誤り：</span>
+                    </template>
+                    {{ candidate.text }}
+                    <p v-if="show_answer">{{ candidate.description }}</p>
+                </li>
+            </ol>
+        </template>
 
         <a v-if="show_answer" class="waves-effect waves-light btn" v-on:click="fetchQuestion();">次の問題へ</a>
         {% endraw %}
@@ -69,7 +88,8 @@
                 "correct": 0,
                 "total": 0,
                 "correct_ratio": 0
-            }
+            },
+            is_fetching: false
         },
         methods: {
             fetchQuestion: function () {
@@ -78,15 +98,14 @@
                 self.show_answer = false;
                 self.selected_answer_index = -1;
 
+                self.is_fetching = true;
                 axios.get("/api/question",{
                 }).then(function (response){
                     self.question = response.data.question;
                     self.candidates = response.data.candidates;
-
-                    console.log(response);
+                    self.is_fetching = false;
                 }).catch(function (error){
-                    console.log(error);
-                })
+                });
             },
             echoMessage: function (message) {
                 console.log(message);
