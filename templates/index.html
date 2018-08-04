@@ -13,12 +13,16 @@
 <body>
 <div id="app">
     <header>
-        {% raw %}
+
         <nav>
             <div class="nav-wrapper">
-                <span>現在の正答率{{ record.correct_ratio }}%</span>
-                <span v-if="record.correct_ratio > 70">【合格ライン】</span>
-                <span v-else>【不合格ライン】</span>
+                <template v-if="starting == false">
+                    {% raw %}
+                    <span>現在の正答率{{ record.correct_ratio }}%</span>
+                    {% endraw %}
+                    <span v-if="record.correct_ratio > 70"><img height="50px" src='{{ url_for("static", filename="safe.png") }}'></span>
+                    <span v-else><img height="50px" src='{{ url_for("static", filename="out.png") }}'></span>
+                </template>
                 <ul class="right">
                     <!-- Modal Trigger -->
                     <li><a class="waves-effect waves-light modal-trigger" href="#modal1"><i class="material-icons">help</i></a></li>
@@ -37,7 +41,7 @@
             </div>
         </div>
 
-        {% endraw %}
+
     </header>
     <main>
         <div class="container">
