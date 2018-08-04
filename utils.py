@@ -39,8 +39,9 @@ def read_question():
     with open("./個人情報保護士問題と解説.tsv", "r", encoding="utf-8") as fin:
         reader = csv.DictReader(fin, delimiter="\t")
         questions = []
-        for row in reader:
+        for i, row in enumerate(reader):
             question = {
+                "_id": i,
                 "question": row["問題"],
                 "candidates": [
                     {

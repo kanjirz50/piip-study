@@ -20,11 +20,11 @@ def index():
 @app.route("/api/question")
 def question():
     similar_question_index = request.args.get("sim_q_idx", "")
-
     if similar_question_index == "":
         question = random.choice(questions)
     else:
-        question = get_similar_question_idx(vec, similar_question_index)
+        sim_idx = get_similar_question_idx(vec, int(similar_question_index))
+        question = questions[sim_idx]
 
     random.shuffle(question["candidates"])
     return jsonify(question), 200

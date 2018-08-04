@@ -110,10 +110,12 @@
             record: {
                 "correct": 0,
                 "total": 0,
-                "correct_ratio": 0
+                "correct_ratio": 0,
+                "recent_incorrect_answers": []
             },
             is_fetching: false,
             starting: true,
+            question_idx: ""
         },
         methods: {
             fetchQuestion: function () {
@@ -123,11 +125,22 @@
                 self.selected_answer_index = -1;
                 self.starting = false;
 
+                // 5問に一度くらいのペースで、一番最後に間違えた問題の類似問題を出す
+                if (self.record.total % 6 == 0 && self.record.total > 0 && self.record.recent_incorrect_answers) {
+                    self.question_idx = self.record.recent_incorrect_answers.pop();
+                } else {
+                    self.question_idx = ""
+                }
+
                 self.is_fetching = true;
                 axios.get("/api/question",{
+                    params: {
+                        sim_q_idx: self.question_idx
+                    }
                 }).then(function (response){
                     self.question = response.data.question;
                     self.candidates = response.data.candidates;
+                    self.question_idx = response.data._id;
                     self.is_fetching = false;
                 }).catch(function (error){
                 });
@@ -144,6 +157,8 @@
                     self.record.total += 1;
                     if (self.candidates[index].correct) {
                         self.record.correct += 1;
+                    } else {
+                        self.record.recent_incorrect_answers.push(self.question_idx);
                     }
                     self.record.correct_ratio = Math.round(self.record.correct / self.record.total * 100);
                 }
