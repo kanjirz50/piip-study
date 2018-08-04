@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
+    <title>Title</title>
+</head>
+<body>
+<div id="app" class="container">
+    <nav>
+    <div class="nav-wrapper">
+        <p>現在の正答率：xx%</p>
+    </div>
+  </nav>
+    <div class="row">
+        <!-- Page Content goes here -->
+        {% raw %}
+        <h6>{{ question }}</h6>
+        <ol>
+            <li v-for="candidate in candidates" v-on:click="checkAnswer(candidate.text);">
+                <template v-if="show_answer">
+                    <span v-if="candidate.correct">正しい：</span>
+                    <span v-else>誤り：</span>
+                </template>
+                {{ candidate.text }}
+                <p v-if="show_answer">{{ candidate.description }}</p>
+            </li>
+        </ol>
+
+        <a v-if="show_answer" class="waves-effect waves-light btn" v-on:click="fetchQuestion();">次の問題へ</a>
+        {% endraw %}
+
+        <!--&lt;!&ndash; Modal Trigger &ndash;&gt;-->
+        <!--<a class="waves-effect waves-light btn modal-trigger" href="#modal1">Modal</a>-->
+
+        <!--&lt;!&ndash; Modal Structure &ndash;&gt;-->
+        <!--<div id="modal1" class="modal">-->
+            <!--<div class="modal-content">-->
+                <!--<h4>Modal Header</h4>-->
+                <!--<p>A bunch of text</p>-->
+            <!--</div>-->
+            <!--<div class="modal-footer">-->
+                <!--<a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>-->
+            <!--</div>-->
+        <!--</div>-->
+    </div>
+</div>
+
+<!-- 開発バージョン、便利なコンソールの警告が含まれています -->
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<!-- Compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script type="text/javascript">
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     var elems = document.querySelectorAll('.modal');
+    //     var instances = M.Modal.init(elems, options);
+    // });
+    M.AutoInit();
+    $(document).ready(function(){
+        $('.modal').modal();
+    });
+    var app = new Vue({
+        el: '#app',
+        data: {
+            question: "",
+            candidates: [],
+            answers: [],
+            show_answer: false
+        },
+        methods: {
+            fetchQuestion: function () {
+                var self = this;
+
+                self.show_answer = false;
+                axios.get("/api/question",{
+                }).then(function (response){
+                    self.question = response.data.question;
+                    self.candidates = response.data.candidates;
+
+                    console.log(response);
+                }).catch(function (error){
+                    console.log(error);
+                })
+            },
+            echoMessage: function (message) {
+                console.log(message);
+            },
+            checkAnswer: function(msg) {
+                var self = this;
+                if (self.show_answer === false){
+                    self.show_answer = true;
+                }
+            }
+        },
+        mounted: function () {
+            this.fetchQuestion();
+        }
+    })
+</script>
+</body>
+</html>
