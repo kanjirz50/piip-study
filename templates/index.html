@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <!--Import Google Icon Font-->
@@ -8,59 +8,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <!-- Compiled and minified CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
-    <title>Title</title>
+    <title>個人情報保護士絶対受かるマン</title>
 </head>
 <body>
-<div id="app" class="container">
-    {% raw %}
-    <nav>
-    <div class="nav-wrapper">
-        <span>現在の正答率{{ record.correct_ratio }}%</span>
-        <span v-if="record.correct_ratio > 70">【合格ライン】</span>
-        <span v-else>【不合格ライン】</span>
-        <ul class="right">
-            <li><a href="#"><i class="material-icons">help</i></a></li>
-      </ul>
-    </div>
-    </nav>
-    {% endraw %}
-    <div class="row">
-        <!-- Page Content goes here -->
+<div id="app">
+    <header>
         {% raw %}
-        <template v-if="is_fetching">
-            <div class="preloader-wrapper big active">
-                <div class="spinner-layer spinner-blue-only">
-                    <div class="circle-clipper left">
-                        <div class="circle"></div>
-                    </div><div class="gap-patch">
-                    <div class="circle"></div>
-                </div><div class="circle-clipper right">
-                    <div class="circle"></div>
-                </div>
-                </div>
+        <nav>
+            <div class="nav-wrapper">
+                <span>現在の正答率{{ record.correct_ratio }}%</span>
+                <span v-if="record.correct_ratio > 70">【合格ライン】</span>
+                <span v-else>【不合格ライン】</span>
+                <ul class="right">
+                    <!-- Modal Trigger -->
+                    <li><a class="waves-effect waves-light modal-trigger" href="#modal1"><i class="material-icons">help</i></a></li>
+                </ul>
             </div>
-        </template>
+        </nav>
 
-        <template v-else>
-            <h6>{{ question }}</h6>
-            <ol style="list-style-type: katakana">
-                <li v-for="(candidate, index) in candidates" v-on:click="checkAnswer(index);">
-                    <template v-if="show_answer">
-                        <i v-if="selected_answer_index == index" class="material-icons">check</i>
-                        <span v-if="candidate.correct">正しい：</span>
-                        <span v-else>誤り：</span>
-                    </template>
-                    {{ candidate.text }}
-                    <p v-if="show_answer">{{ candidate.description }}</p>
-                </li>
-            </ol>
-        </template>
+        <!-- Modal Structure -->
+        <div id="modal1" class="modal">
+            <div class="modal-content">
+                <h4>個人情報保護士試験絶対受かるマン</h4>
+                <p>正答率70%以上をキープしましょう。</p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="modal-close waves-effect waves-green btn-flat">がんばる</a>
+            </div>
+        </div>
 
-        <a v-if="show_answer" class="waves-effect waves-light btn" v-on:click="fetchQuestion();">次の問題へ</a>
         {% endraw %}
-    </div>
+    </header>
+    <main>
+        <div class="container">
+            <template v-if="starting">
+                <div class="row">
+                    <div class="col s12">
+                        <img class="responsive-img" src='{{ url_for("static", filename="top.png") }}'>
+                    </div>
+                    <a class="waves-effect waves-light btn-large" v-on:click="fetchQuestion();">はじめる</a>
+                </div>
+            </template>
+            <template v-else>
+                <div class="row">
+                    <!-- Page Content goes here -->
+                    {% raw %}
+                    <template v-if="is_fetching">
+                        <div class="col s4"></div>
+                        <div class="col s4">
+                            <div class="progress">
+                                <div class="indeterminate"></div>
+                            </div>
+                        </div>
+                        <div class="col s4"></div>
+                    </template>
+                    <template v-else>
+                        <h6>{{ question }}</h6>
+                        <ol style="list-style-type: katakana">
+                            <li v-for="(candidate, index) in candidates" v-on:click="checkAnswer(index);">
+                                <template v-if="show_answer">
+                                    <i v-if="selected_answer_index == index" class="material-icons">check</i>
+                                    <span v-if="candidate.correct">正しい：</span>
+                                    <span v-else>誤り：</span>
+                                </template>
+                                {{ candidate.text }}
+                                <p v-if="show_answer && candidate.description"><i class="material-icons tiny">description</i>{{ candidate.description }}</p>
+                            </li>
+                        </ol>
+                    </template>
+                    <a v-if="show_answer" class="waves-effect waves-light btn" v-on:click="fetchQuestion();">次の問題へ</a>
+                    {% endraw %}
+                </div>
+            </template>
+        </div>
+    </main>
 </div>
-
 <!-- 開発バージョン、便利なコンソールの警告が含まれています -->
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -68,14 +90,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script type="text/javascript">
-    // document.addEventListener('DOMContentLoaded', function() {
-    //     var elems = document.querySelectorAll('.modal');
-    //     var instances = M.Modal.init(elems, options);
-    // });
     M.AutoInit();
     $(document).ready(function(){
         $('.modal').modal();
     });
+
     var app = new Vue({
         el: '#app',
         data: {
@@ -89,7 +108,8 @@
                 "total": 0,
                 "correct_ratio": 0
             },
-            is_fetching: false
+            is_fetching: false,
+            starting: true,
         },
         methods: {
             fetchQuestion: function () {
@@ -97,6 +117,7 @@
 
                 self.show_answer = false;
                 self.selected_answer_index = -1;
+                self.starting = false;
 
                 self.is_fetching = true;
                 axios.get("/api/question",{
@@ -125,7 +146,7 @@
             }
         },
         mounted: function () {
-            this.fetchQuestion();
+            //this.fetchQuestion();
         }
     })
 </script>
