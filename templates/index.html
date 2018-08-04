@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
+    <title>個人情報保護士絶対受かるマン</title>
+</head>
+<body>
+<div id="app">
+    <header>
+
+        <nav>
+            <div class="nav-wrapper">
+                <template v-if="starting == false">
+                    {% raw %}
+                    <span>現在の正答率{{ record.correct_ratio }}%</span>
+                    {% endraw %}
+                    <span v-if="record.correct_ratio > 70"><img height="50px" src='{{ url_for("static", filename="safe.png") }}'></span>
+                    <span v-else><img height="50px" src='{{ url_for("static", filename="out.png") }}'></span>
+                </template>
+                <ul class="right">
+                    <!-- Modal Trigger -->
+                    <li><a class="waves-effect waves-light modal-trigger" href="#modal1"><i class="material-icons">help</i></a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Modal Structure -->
+        <div id="modal1" class="modal">
+            <div class="modal-content">
+                <h4>個人情報保護士試験絶対受かるマン</h4>
+                <p>正答率70%以上をキープしましょう。</p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="modal-close waves-effect waves-green btn-flat">がんばる</a>
+            </div>
+        </div>
+
+
+    </header>
+    <main>
+        <div class="container">
+            <template v-if="starting">
+                <div class="row">
+                    <div class="col s12">
+                        <img class="responsive-img" src='{{ url_for("static", filename="top.png") }}'>
+                    </div>
+                    <a class="waves-effect waves-light btn-large" v-on:click="fetchQuestion();">はじめる</a>
+                </div>
+            </template>
+            <template v-else>
+                <div class="row">
+                    <!-- Page Content goes here -->
+                    {% raw %}
+                    <template v-if="is_fetching">
+                        <div class="col s4"></div>
+                        <div class="col s4">
+                            <div class="progress">
+                                <div class="indeterminate"></div>
+                            </div>
+                        </div>
+                        <div class="col s4"></div>
+                    </template>
+                    <template v-else>
+                        <h6>{{ question }}</h6>
+                        <ol style="list-style-type: katakana">
+                            <li v-for="(candidate, index) in candidates" v-on:click="checkAnswer(index);">
+                                <template v-if="show_answer">
+                                    <i v-if="selected_answer_index == index" class="material-icons">check</i>
+                                    <span v-if="candidate.correct">正しい：</span>
+                                    <span v-else>誤り：</span>
+                                </template>
+                                {{ candidate.text }}
+                                <p v-if="show_answer && candidate.description"><i class="material-icons tiny">description</i>{{ candidate.description }}</p>
+                            </li>
+                        </ol>
+                    </template>
+                    <a v-if="show_answer" class="waves-effect waves-light btn" v-on:click="fetchQuestion();">次の問題へ</a>
+                    {% endraw %}
+                </div>
+            </template>
+        </div>
+    </main>
+</div>
+<!-- 開発バージョン、便利なコンソールの警告が含まれています -->
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<!-- Compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/js/materialize.min.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script type="text/javascript">
+    M.AutoInit();
+    $(document).ready(function(){
+        $('.modal').modal();
+    });
+
+    var app = new Vue({
+        el: '#app',
+        data: {
+            question: "",
+            candidates: [],
+            answers: [],
+            show_answer: false,
+            selected_answer_index: -1,
+            record: {
+                "correct": 0,
+                "total": 0,
+                "correct_ratio": 0,
+                "recent_incorrect_answers": []
+            },
+            is_fetching: false,
+            starting: true,
+            question_idx: ""
+        },
+        methods: {
+            fetchQuestion: function () {
+                var self = this;
+
+                self.show_answer = false;
+                self.selected_answer_index = -1;
+                self.starting = false;
+
+                // 5問に一度くらいのペースで、一番最後に間違えた問題の類似問題を出す
+                if (self.record.total % 6 == 0 && self.record.total > 0 && self.record.recent_incorrect_answers) {
+                    self.question_idx = self.record.recent_incorrect_answers.pop();
+                } else {
+                    self.question_idx = ""
+                }
+
+                self.is_fetching = true;
+                axios.get("/api/question",{
+                    params: {
+                        sim_q_idx: self.question_idx
+                    }
+                }).then(function (response){
+                    self.question = response.data.question;
+                    self.candidates = response.data.candidates;
+                    self.question_idx = response.data._id;
+                    self.is_fetching = false;
+                }).catch(function (error){
+                });
+            },
+            echoMessage: function (message) {
+                console.log(message);
+            },
+            checkAnswer: function(index) {
+                var self = this;
+                if (self.show_answer === false){
+                    self.selected_answer_index = index;
+                    self.show_answer = true;
+
+                    self.record.total += 1;
+                    if (self.candidates[index].correct) {
+                        self.record.correct += 1;
+                    } else {
+                        self.record.recent_incorrect_answers.push(self.question_idx);
+                    }
+                    self.record.correct_ratio = Math.round(self.record.correct / self.record.total * 100);
+                }
+            }
+        },
+        mounted: function () {
+            //this.fetchQuestion();
+        }
+    })
+</script>
+</body>
+</html>
