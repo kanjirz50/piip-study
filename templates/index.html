@@ -12,18 +12,23 @@
 </head>
 <body>
 <div id="app" class="container">
+    {% raw %}
     <nav>
     <div class="nav-wrapper">
-        <p>現在の正答率：xx%</p>
+        <span>現在の正答率{{ record.correct_ratio }}%</span>
+        <span v-if="record.correct_ratio > 70">【合格ライン】</span>
+        <span v-else>【不合格ライン】</span>
     </div>
-  </nav>
+    </nav>
+    {% endraw %}
     <div class="row">
         <!-- Page Content goes here -->
         {% raw %}
         <h6>{{ question }}</h6>
-        <ol>
-            <li v-for="candidate in candidates" v-on:click="checkAnswer(candidate.text);">
+        <ol style="list-style-type: katakana">
+            <li v-for="(candidate, index) in candidates" v-on:click="checkAnswer(index);">
                 <template v-if="show_answer">
+                    <i v-if="selected_answer_index == index" class="material-icons">check</i>
                     <span v-if="candidate.correct">正しい：</span>
                     <span v-else>誤り：</span>
                 </template>
@@ -34,20 +39,6 @@
 
         <a v-if="show_answer" class="waves-effect waves-light btn" v-on:click="fetchQuestion();">次の問題へ</a>
         {% endraw %}
-
-        <!--&lt;!&ndash; Modal Trigger &ndash;&gt;-->
-        <!--<a class="waves-effect waves-light btn modal-trigger" href="#modal1">Modal</a>-->
-
-        <!--&lt;!&ndash; Modal Structure &ndash;&gt;-->
-        <!--<div id="modal1" class="modal">-->
-            <!--<div class="modal-content">-->
-                <!--<h4>Modal Header</h4>-->
-                <!--<p>A bunch of text</p>-->
-            <!--</div>-->
-            <!--<div class="modal-footer">-->
-                <!--<a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>-->
-            <!--</div>-->
-        <!--</div>-->
     </div>
 </div>
 
@@ -72,13 +63,21 @@
             question: "",
             candidates: [],
             answers: [],
-            show_answer: false
+            show_answer: false,
+            selected_answer_index: -1,
+            record: {
+                "correct": 0,
+                "total": 0,
+                "correct_ratio": 0
+            }
         },
         methods: {
             fetchQuestion: function () {
                 var self = this;
 
                 self.show_answer = false;
+                self.selected_answer_index = -1;
+
                 axios.get("/api/question",{
                 }).then(function (response){
                     self.question = response.data.question;
@@ -92,10 +91,17 @@
             echoMessage: function (message) {
                 console.log(message);
             },
-            checkAnswer: function(msg) {
+            checkAnswer: function(index) {
                 var self = this;
                 if (self.show_answer === false){
+                    self.selected_answer_index = index;
                     self.show_answer = true;
+
+                    self.record.total += 1;
+                    if (self.candidates[index].correct) {
+                        self.record.correct += 1;
+                    }
+                    self.record.correct_ratio = Math.round(self.record.correct / self.record.total * 100);
                 }
             }
         },
